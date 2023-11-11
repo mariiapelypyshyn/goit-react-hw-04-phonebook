@@ -1,39 +1,29 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { Container, Title, SubTitle, Wrapper } from './App.styled';
 import ContactForm from '../ContactForm/ContactForm';
 import ContactList from '../ContactList/ContactList';
 import Filter from '../Filter/Filter';
 
-class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+const App = () => {
 
-  componentDidMount() {
+  const [contacts, setContacts] = useState(() => {
     const getContacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(getContacts) ?? this.state.contacts;
+    const parsedContacts = JSON.parse(getContacts) ?? contacts;
 
-    this.setState({ contacts: parsedContacts });
-  }
+    return parsedContacts;
+  }, []);
 
-  componentDidUpdate(_, prevState){
-    if (this.state.contacts !== prevState.contacts) {
-      const stringifiedContacts = JSON.stringify(this.state.contacts);
-      localStorage.setItem('contacts', stringifiedContacts);
-    }
- }
-
+  useEffect(() => {
+    const stringifiedContacts = JSON.stringify(contacts);
+    localStorage.setItem('contacts', stringifiedContacts);
+  }, [contacts]);
+ 
+  const [filter, setFilter] = useState('');
 
   // Додавання нового контакту в список контактів
-  addContact = contact => {
-    const isInContacts = this.state.contacts.some(
+  const addContact = contact => {
+    const isInContacts = contacts.some(
       ({ name }) => name.toLowerCase() === contact.name.toLowerCase()
     );
 
@@ -41,19 +31,17 @@ class App extends Component {
       alert(`${contact.name} is already in contacts`);
       return;
     }
-    this.setState(prevState => ({
-      contacts: [{ id: nanoid(), ...contact }, ...prevState.contacts],
-    }));
+
+    setContacts([{ id: nanoid(), ...contact }, ...contacts])
   };
 
   // Зміна значення фільтру
-  changeFilter = event => {
-    this.setState({ filter: event.target.value });
+  const changeFilter = event => {
+    setFilter(event.target.value);
   };
 
   // Отримання відфільтрованих контактів
-  getVisibleContacts = () => {
-    const { filter, contacts } = this.state;
+  const getVisibleContacts = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
@@ -62,41 +50,33 @@ class App extends Component {
   };
 
   // Видалення контакту зі списку
-  removeContact = contactId => {
-    this.setState(prevState => {
-      return {
-        contacts: prevState.contacts.filter(({ id }) => id !== contactId),
-      };
-    });
+  const removeContact = contactId => {
+    setContacts(prevState => prevState.filter(({ id }) => id !== contactId))
+     
   };
 
-  render() {
-    const visibleContacts = this.getVisibleContacts();
-    const { filter } = this.state;
+  const visibleContacts = getVisibleContacts();
 
-    return (
-      <Container>
-        <Title>Phonebook</Title>
-
-        <ContactForm onSubmit={this.addContact} />
-
-        <SubTitle>Contacts</SubTitle>
-        {this.state.contacts.length > 0 ? (
-          // Фільтр для відображення контактів
-          <Filter value={filter} onChangeFilter={this.changeFilter} />
-        ) : (
-          <Wrapper>Your phonebook is empty. Add first contact!</Wrapper>
-        )}
-        {this.state.contacts.length > 0 && (
-          // Список контактів
-          <ContactList
-            contacts={visibleContacts}
-            onRemoveContact={this.removeContact}
-          />
-        )}
-      </Container>
-    );
-  }
+  return (
+    <Container>
+      <Title>Phonebook</Title>
+      <ContactForm onSubmit={addContact} />
+      <SubTitle>Contacts</SubTitle>
+      {contacts.length > 0 ? (
+        // Фільтр для відображення контактів
+        <Filter value={filter} onChangeFilter={changeFilter} />
+      ) : (
+        <Wrapper>Your phonebook is empty. Add first contact!</Wrapper>
+      )}
+      {contacts.length > 0 && (
+        // Список контактів
+        <ContactList
+          contacts={visibleContacts}
+          onRemoveContact={removeContact}
+        />
+      )}
+    </Container>
+  );
 }
 
 export default App;
